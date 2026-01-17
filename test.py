@@ -2,10 +2,11 @@ import cv2
 import numpy as np
 from pathlib import Path
 from annotation_tracker import AnnotationTracker
+from CSRT_tracker import AnnotationTrackerCSRT
 from shapes import get_all_shapes_for_video
 from CSRT_tracker import AnnotationTrackerCSRT
 
-video_path = "Dataset/Lapchole/Lapchole2.mp4"
+video_path = "Dataset/Lapchole/Lapchole1.mp4"
 cap = cv2.VideoCapture(video_path)
 
 ret, frame = cap.read()
