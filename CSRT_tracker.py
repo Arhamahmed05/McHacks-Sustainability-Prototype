@@ -38,13 +38,22 @@ class AnnotationTrackerCSRT:
         self.status = "tracking"
         self.confidence = 1.0
 
-        # Compute motion from previous bbox → new bbox
-        dx = bbox[0] - self.prev_bbox[0]
-        dy = bbox[1] - self.prev_bbox[1]
+        # Compute scale and translation from previous bbox → new bbox
+        prev_x, prev_y, prev_w, prev_h = self.prev_bbox
+        new_x, new_y, new_w, new_h = bbox
 
-        # Apply translation to annotation geometry
-        self.annotation_points[:, 0] += dx
-        self.annotation_points[:, 1] += dy
+        prev_w = prev_w if prev_w != 0 else 1.0
+        prev_h = prev_h if prev_h != 0 else 1.0
+
+        scale_x = new_w / prev_w
+        scale_y = new_h / prev_h
+
+        prev_center = np.array([prev_x + prev_w / 2.0, prev_y + prev_h / 2.0], dtype=np.float32)
+        new_center = np.array([new_x + new_w / 2.0, new_y + new_h / 2.0], dtype=np.float32)
+
+        # Apply affine transform (scale around bbox center + translation) to annotation geometry
+        self.annotation_points = (self.annotation_points - prev_center) * np.array([scale_x, scale_y]) + new_center
+        # If rotation is needed, estimate it from tracker output or add a separate feature-based refinement step.
 
         # Update ROI + bbox
         self.roi = self._compute_roi(self.annotation_points, frame.shape)
