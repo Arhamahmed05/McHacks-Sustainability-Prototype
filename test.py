@@ -1,7 +1,9 @@
 import cv2
 from annotation_tracker import AnnotationTracker
+from CSRT_tracker import AnnotationTrackerCSRT
 
-video_path = "Dataset/Lapchole/Lapchole1.mp4"
+video_path = "Dataset/Lapchole/Lapchole2.mp4"
+# video_path = "Dataset/POCUS/Liver.mp4"
 cap = cv2.VideoCapture(video_path)
 
 ret, frame = cap.read()
@@ -49,7 +51,7 @@ while True:
 
         key = cv2.waitKey(30) & 0xFF
         if key == 13 and len(clicked_points) >= 2:  # ENTER
-            tracker = AnnotationTracker(frame, clicked_points)
+            tracker = AnnotationTrackerCSRT(frame, clicked_points)
             tracking_started = True
             print("Tracking started")
         elif key == ord('r'):

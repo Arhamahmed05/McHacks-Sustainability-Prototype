@@ -13,14 +13,17 @@ class AnnotationTracker:
         self.status = "tracking"
         self.confidence = 1.0
 
+        self.clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+
         # Create ROI around annotation
         self.roi = self._compute_roi(self.annotation_points, frame.shape)
         tmpl = frame[self.roi[1]:self.roi[3], self.roi[0]:self.roi[2]]
         self.template = cv2.cvtColor(tmpl, cv2.COLOR_BGR2GRAY)
 
         # Initialize tracking points
-        self.prev_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        self.points = self._detect_features(self.prev_gray)
+        initial_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        self.prev_gray = self._preprocess_gray(initial_gray)
+        self.points = self._detect_features(initial_gray)
 
         self.transform = np.eye(2, 3, dtype=np.float32)
         self.template_update_cooldown = 10
@@ -34,6 +37,7 @@ class AnnotationTracker:
     def update(self, frame):
         self.frame_index += 1
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        preprocessed_gray = self._preprocess_gray(gray)
 
         if self.status == "lost":
             self._attempt_recovery(gray)
@@ -41,7 +45,7 @@ class AnnotationTracker:
 
         new_points, status, _ = cv2.calcOpticalFlowPyrLK(
             self.prev_gray,
-            gray,
+            preprocessed_gray,
             self.points,
             np.empty_like(self.points), 
             winSize=(21, 21),
@@ -57,7 +61,7 @@ class AnnotationTracker:
             return self.annotation_points, self.status, self.confidence
 
         back_points, back_status, _ = cv2.calcOpticalFlowPyrLK(
-            gray,
+            preprocessed_gray,
             self.prev_gray,
             good_new,
             np.empty_like(good_new),
@@ -100,7 +104,7 @@ class AnnotationTracker:
         self.roi = self._compute_roi(self.annotation_points, frame.shape)
         self.points = self._detect_features(gray)
 
-        self.prev_gray = gray.copy()
+        self.prev_gray = preprocessed_gray.copy()
         self.transform = T
         self.confidence = float(inlier_ratio)
         self.status = "tracking"
@@ -124,6 +128,10 @@ class AnnotationTracker:
     def _detect_features(self, gray):
         x1, y1, x2, y2 = self.roi
         roi_gray = gray[y1:y2, x1:x2]
+        if roi_gray.size == 0:
+            return np.empty((0,1,2), dtype=np.float32)
+
+        roi_gray = self._preprocess_gray(roi_gray)
 
         points = cv2.goodFeaturesToTrack(
             roi_gray,
@@ -181,6 +189,9 @@ class AnnotationTracker:
         pts_h = np.hstack([pts, np.ones((pts.shape[0],1))])
         new_pts = (T @ pts_h.T).T
         return new_pts.astype(np.float32)
+
+    def _preprocess_gray(self, gray):
+        return self.clahe.apply(gray)
 
     def _mark_lost(self):
         self.status = "lost"
