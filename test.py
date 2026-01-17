@@ -3,6 +3,7 @@ import numpy as np
 from pathlib import Path
 from annotation_tracker import AnnotationTracker
 from shapes import get_all_shapes_for_video
+from CSRT_tracker import AnnotationTrackerCSRT
 
 video_path = "Dataset/Lapchole/Lapchole2.mp4"
 cap = cv2.VideoCapture(video_path)
@@ -40,7 +41,7 @@ print(f"\n✓ Found {len(shapes_dict)} shape(s) for '{video_name}':")
 for idx, (shape_name, points) in enumerate(shapes_dict.items()):
     color = colors[idx % len(colors)]
     trackers[shape_name] = {
-        'tracker': AnnotationTracker(frame, points),
+        'tracker': AnnotationTrackerCSRT(frame, points),
         'color': color,
         'name': shape_name
     }
@@ -99,7 +100,7 @@ while True:
         
         # Reinitialize all trackers
         for shape_name, points in shapes_dict.items():
-            trackers[shape_name]['tracker'] = AnnotationTracker(frame, points)
+            trackers[shape_name]['tracker'] = AnnotationTrackerCSRT(frame, points)
         
         frame_count = 0
 
