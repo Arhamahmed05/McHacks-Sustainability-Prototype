@@ -23,12 +23,16 @@ class AnnotationTracker:
         self.points = self._detect_features(self.prev_gray)
 
         self.transform = np.eye(2, 3, dtype=np.float32)
+        self.template_update_cooldown = 10
+        self.last_template_update = -self.template_update_cooldown
+        self.frame_index = 0
 
     # ------------------------------
     # Public update
     # ------------------------------
     
     def update(self, frame):
+        self.frame_index += 1
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
         if self.status == "lost":
@@ -39,7 +43,7 @@ class AnnotationTracker:
             self.prev_gray,
             gray,
             self.points,
-            np.empty_like(self.points),   # <-- Pylance-safe
+            np.empty_like(self.points), 
             winSize=(21, 21),
             maxLevel=3,
             criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01)
@@ -47,6 +51,28 @@ class AnnotationTracker:
 
         good_old = self.points[status.flatten() == 1]
         good_new = new_points[status.flatten() == 1]
+
+        if len(good_new) < 6:
+            self._mark_lost()
+            return self.annotation_points, self.status, self.confidence
+
+        back_points, back_status, _ = cv2.calcOpticalFlowPyrLK(
+            gray,
+            self.prev_gray,
+            good_new,
+            np.empty_like(good_new),
+            winSize=(21, 21),
+            maxLevel=3,
+            criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01)
+        )
+
+        round_trip_error = np.linalg.norm(
+            good_old - back_points, axis=2
+        ).flatten()
+        round_trip_mask = (back_status.flatten() == 1) & (round_trip_error <= 1.5)
+
+        good_old = good_old[round_trip_mask]
+        good_new = good_new[round_trip_mask]
 
         if len(good_new) < 6:
             self._mark_lost()
@@ -61,7 +87,7 @@ class AnnotationTracker:
             self._mark_lost()
             return self.annotation_points, self.status, self.confidence
 
-        inlier_ratio = np.sum(inliers) / len(inliers)
+        inlier_ratio = np.sum(inliers) / len(good_new)
 
         if inlier_ratio < 0.6:
             self._mark_lost()
@@ -78,6 +104,17 @@ class AnnotationTracker:
         self.transform = T
         self.confidence = float(inlier_ratio)
         self.status = "tracking"
+
+        if (
+            inlier_ratio > 0.8
+            and (self.frame_index - self.last_template_update) >= self.template_update_cooldown
+        ):
+            x1, y1, x2, y2 = self.roi
+            if x2 > x1 and y2 > y1:
+                roi_gray = gray[y1:y2, x1:x2]
+                if roi_gray.size > 0:
+                    self.template = roi_gray.copy()
+                    self.last_template_update = self.frame_index
 
         return self.annotation_points, self.status, self.confidence
 
