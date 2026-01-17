@@ -1,8 +1,8 @@
 import cv2
-from annotation_tracker import AnnotationTracker
+# from annotation_tracker import AnnotationTracker
 from CSRT_tracker import AnnotationTrackerCSRT
 
-video_path = "Dataset/Lapchole/Lapchole2.mp4"
+video_path = "Dataset/Lapchole/Lapchole1.mp4"
 # video_path = "Dataset/POCUS/Liver.mp4"
 cap = cv2.VideoCapture(video_path)
 
