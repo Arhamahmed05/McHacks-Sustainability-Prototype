@@ -240,12 +240,47 @@
             font-size: 0.9rem;
             color: #d1d5db;
         }
+        .video-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .video-box {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .video-box h3 {
+            padding: 0.75rem;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+            color: #c4b5fd;
+        }
+
+        .video-box canvas,
+        .video-box img {
+            width: 100%;
+            display: block;
+            background: #000;
+        }
+
+        @media (max-width: 1024px) {
+            .video-row {
+                grid-template-columns: 1fr;
+            }
+        }
         
         @media (max-width: 1024px) {
             .grid {
                 grid-template-columns: 1fr;
             }
         }
+        
     </style>
 </head>
 <body>
@@ -376,7 +411,7 @@
     </div>
     
     <script>
-        const API_BASE = 'http://localhost:5000/api';
+        const API_BASE = 'http://localhost:5001/api';
         let canvas, ctx;
         let points = [];
         let firstFrame = null;
@@ -660,7 +695,7 @@
         async function playVideo() {
             try {
                 await fetch(`${API_BASE}/play`, { method: 'POST' });
-                document.getElementById('videoStream').src = 'http://localhost:5000/video_feed?' + new Date().getTime();
+                document.getElementById('videoStream').src = 'http://localhost:5001/video_feed?' + new Date().getTime();
                 showAlert('Playback started', 'success');
             } catch (err) {
                 showAlert('Error starting playback: ' + err.message, 'error');

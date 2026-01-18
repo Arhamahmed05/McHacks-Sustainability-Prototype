@@ -4,10 +4,13 @@ import cv2
 import numpy as np
 import base64
 import os
+os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "threads;1"
 from pathlib import Path
 from annotation_tracker import AnnotationTracker
 from CSRT_tracker import AnnotationTrackerCSRT
 from shapes import SavedShapes
+
+from flask import Flask, request, jsonify, Response, send_from_directory
 
 app = Flask(__name__)
 CORS(app)
@@ -34,6 +37,11 @@ class VideoState:
         ]
 
 state = VideoState()
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+
 
 @app.route('/api/status', methods=['GET'])
 def get_status():
@@ -240,57 +248,62 @@ def reset_video():
     
     return jsonify({'success': True})
 
+import time
+
 def generate_frames():
+    print("📺 Video stream started")
+
     while True:
-        if not state.is_playing or state.video_capture is None:
+        # If no video, stop stream
+        if state.video_capture is None:
+            print("⛔ No video capture — closing stream")
+            break
+
+        # If paused, sleep (DO NOT spin)
+        if not state.is_playing:
+            time.sleep(0.03)
             continue
-        
+
+        # Read frame safely
         ret, frame = state.video_capture.read()
-        
+
         if not ret:
-            # End of video - reset
+            print("🔁 End of video — stopping playback")
             state.is_playing = False
-            state.video_capture.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            state.current_frame = 0
-            continue
-        
+            break   # IMPORTANT: close the MJPEG stream
+
         state.current_frame += 1
-        
+
         # Apply tracking
         if state.trackers:
             for shape_name, tracker_data in state.trackers.items():
                 tracker = tracker_data['tracker']
                 color = tracker_data['color']
                 name = tracker_data['name']
-                
-                # Update tracker
+
                 pts, status, conf = tracker.update(frame)
-                
-                # Draw tracked annotation
                 pts_int = pts.astype(int)
+
                 cv2.polylines(frame, [pts_int], True, color, 2)
-                
-                # Draw points
-                for i in range(len(pts_int)):
-                    cv2.circle(frame, tuple(pts_int[i]), 4, color, -1)
-                
-                # Add label with status
+
+                for p in pts_int:
+                    cv2.circle(frame, tuple(p), 4, color, -1)
+
                 center = np.mean(pts_int, axis=0).astype(int)
                 label = f"{name}: {status} ({conf:.2f})"
-                cv2.putText(frame, label, tuple(center), 
-                           cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-        
-        # Display frame counter
-        cv2.putText(frame, f"Frame: {state.current_frame}/{state.total_frames}", 
-                   (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        
-        # Encode frame
+                cv2.putText(frame, label, tuple(center),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+        cv2.putText(frame, f"Frame: {state.current_frame}/{state.total_frames}",
+                    (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+
         _, buffer = cv2.imencode('.jpg', frame)
         frame_bytes = buffer.tobytes()
-        
+
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
+    print("🛑 Video stream closed")
 @app.route('/video_feed')
 def video_feed():
     return Response(generate_frames(),
