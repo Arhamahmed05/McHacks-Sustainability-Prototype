@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoloRay Motion Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(90deg, #9333ea 0%, #4f46e5 100%);
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .panel {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .panel h2 {
+            color: #a78bfa;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #a78bfa;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #d1d5db;
+            font-weight: 500;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            color: #fff;
+            font-size: 0.95rem;
+        }
+        
+        input:focus, select:focus {
+            outline: none;
+            border-color: #9333ea;
+        }
+        
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #9333ea;
+            border: none;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+        
+        button:hover {
+            background: #7c3aed;
+            transform: translateY(-1px);
+        }
+        
+        button.secondary {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        button.secondary:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        button.danger {
+            background: #dc2626;
+        }
+        
+        button.danger:hover {
+            background: #b91c1c;
+        }
+        
+        button.success {
+            background: #16a34a;
+        }
+        
+        button.success:hover {
+            background: #15803d;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        canvas {
+            width: 100%;
+            max-height: 400px;
+            background: #000;
+            border-radius: 8px;
+            cursor: crosshair;
+        }
+        
+        #videoStream {
+            width: 100%;
+            border-radius: 8px;
+            background: #000;
+        }
+        
+        .shapes-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            padding: 0.5rem;
+        }
+        
+        .shape-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: rgba(255,255,255,0.05);
+            border-left: 4px solid #9333ea;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .shape-item label {
+            display: flex;
+            align-items: center;
+            margin: 0;
+            cursor: pointer;
+        }
+        
+        .shape-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 0.5rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            border-left: 4px solid;
+        }
+        
+        .alert.success {
+            background: rgba(22, 163, 74, 0.2);
+            border-color: #16a34a;
+        }
+        
+        .alert.error {
+            background: rgba(220, 38, 38, 0.2);
+            border-color: #dc2626;
+        }
+        
+        .alert.info {
+            background: rgba(59, 130, 246, 0.2);
+            border-color: #3b82f6;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+        }
+        
+        .status-label {
+            color: #9ca3af;
+        }
+        
+        .status-value {
+            color: #10b981;
+            font-weight: 600;
+        }
+        
+        .instructions {
+            background: rgba(147, 51, 234, 0.1);
+            border-left: 4px solid #9333ea;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+        
+        .instructions ul {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .instructions li {
+            margin-bottom: 0.25rem;
+            font-size: 0.9rem;
+            color: #d1d5db;
+        }
+        
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>HoloRay Motion-Tracked Annotation</h1>
+        <p>Draw annotations on the first frame and watch them track through the video</p>
+    </div>
+    
+    <div class="container">
+        <div id="alertContainer"></div>
+        
+        <div class="grid">
+            <!-- Left Panel -->
+            <div class="panel">
+                <h2>Annotation Panel</h2>
+                
+                <div class="instructions">
+                    <strong>How to use:</strong>
+                    <ul>
+                        <li>Load a video using the path input below</li>
+                        <li>Click on the image to create annotation points</li>
+                        <li>Name and save your annotation</li>
+                        <li>Select shapes to track and initialize trackers</li>
+                        <li>Play the video to see tracking in action</li>
+                    </ul>
+                </div>
+                
+                <div class="form-group">
+                    <label>Video Path:</label>
+                    <input type="text" id="videoPath" value="Dataset/Lapchole/Lapchole1.mp4" placeholder="Dataset/Lapchole/Lapchole1.mp4">
+                    <div class="button-group">
+                        <button onclick="loadVideo()">Load Video</button>
+                        <button class="secondary" onclick="listVideos()">List Videos</button>
+                    </div>
+                </div>
+                
+                <div id="videoListContainer" style="display: none;">
+                    <div class="form-group">
+                        <label>Available Videos:</label>
+                        <div id="videoList" class="shapes-list"></div>
+                    </div>
+                </div>
+                
+                <canvas id="canvas" width="640" height="480"></canvas>
+                
+                <div class="button-group">
+                    <button class="danger" onclick="clearPoints()">Clear Points</button>
+                    <button class="secondary" onclick="undoPoint()">Undo</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Shape Name:</label>
+                    <input type="text" id="shapeName" placeholder="e.g., gallbladder, instrument">
+                    <button class="success" onclick="saveShape()" style="margin-top: 0.5rem;">Save Shape</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Saved Shapes:</label>
+                    <div id="shapesList" class="shapes-list">
+                        <p style="text-align: center; color: #6b7280; padding: 1rem;">No shapes saved yet</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel -->
+            <div class="panel">
+                <h2>Video Playback & Tracking</h2>
+                
+                <div style="background: #000; border-radius: 8px; aspect-ratio: 16/9; margin-bottom: 1rem;">
+                    <img id="videoStream" src="" alt="Video stream">
+                </div>
+                
+                <div class="form-group">
+                    <label>Tracker Type:</label>
+                    <select id="trackerType">
+                        <option value="custom">Custom Optical Flow (Recommended)</option>
+                        <option value="csrt">CSRT Tracker</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Playback Controls:</label>
+                    <button class="success" onclick="initializeTrackers()" style="width: 100%; margin-bottom: 0.5rem;">Initialize Trackers</button>
+                    <div class="button-group">
+                        <button onclick="playVideo()" style="flex: 1;">Play</button>
+                        <button class="secondary" onclick="pauseVideo()" style="flex: 1;">Pause</button>
+                    </div>
+                    <button class="secondary" onclick="resetVideo()" style="width: 100%; margin-top: 0.5rem;">Reset</button>
+                </div>
+                
+                <div class="form-group">
+                    <label>Status:</label>
+                    <div class="status-grid" id="statusContainer">
+                        <div class="status-item">
+                            <span class="status-label">Video Loaded:</span>
+                            <span class="status-value" id="statusVideoLoaded">No</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Video Name:</span>
+                            <span class="status-value" id="statusVideoName">-</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Frame:</span>
+                            <span class="status-value" id="statusFrame">0 / 0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Active Trackers:</span>
+                            <span class="status-value" id="statusTrackers">0</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-label">Playback Status:</span>
+                            <span class="status-value" id="statusPlaying">Stopped</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="instructions">
+                    <strong>Tracking Tips:</strong>
+                    <ul>
+                        <li>Draw shapes around anatomical features you want to track</li>
+                        <li>Use 6-10 points for best results</li>
+                        <li>Custom tracker works better for medical imaging</li>
+                        <li>Annotations will move with the underlying anatomy</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let canvas, ctx;
+        let points = [];
+        let firstFrame = null;
+        let shapes = [];
+        let selectedShapes = new Set();
+        let videoName = null;
+        
+        // Initialize canvas
+        window.onload = function() {
+            canvas = document.getElementById('canvas');
+            ctx = canvas.getContext('2d');
+            canvas.addEventListener('click', handleCanvasClick);
+            updateStatus();
+            setInterval(updateStatus, 1000);
+        };
+        
+        function handleCanvasClick(e) {
+            if (!firstFrame) {
+                showAlert('Please load a video first', 'error');
+                return;
+            }
+            
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const x = Math.round((e.clientX - rect.left) * scaleX);
+            const y = Math.round((e.clientY - rect.top) * scaleY);
+            
+            points.push([x, y]);
+            drawCanvas();
+        }
+        
+        function drawCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (firstFrame) {
+                const img = new Image();
+                img.onload = function() {
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
+                    
+                    if (points.length > 0) {
+                        // Draw lines
+                        ctx.strokeStyle = '#00ff00';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(points[0][0], points[0][1]);
+                        
+                        for (let i = 1; i < points.length; i++) {
+                            ctx.lineTo(points[i][0], points[i][1]);
+                        }
+                        
+                        if (points.length > 2) {
+                            ctx.lineTo(points[0][0], points[0][1]);
+                        }
+                        
+                        ctx.stroke();
+                        
+                        // Draw points
+                        points.forEach((point, i) => {
+                            ctx.fillStyle = '#00ff00';
+                            ctx.beginPath();
+                            ctx.arc(point[0], point[1], 5, 0, Math.PI * 2);
+                            ctx.fill();
+                            
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = '12px Arial';
+                            ctx.fillText(i + 1, point[0] + 10, point[1] - 10);
+                        });
+                    }
+                };
+                img.src = 'data:image/jpeg;base64,' + firstFrame;
+            }
+        }
+        
+        async function loadVideo() {
+            const videoPath = document.getElementById('videoPath').value;
+            
+            if (!videoPath) {
+                showAlert('Please enter a video path', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/load_video`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ video_path: videoPath })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    showAlert(data.error, 'error');
+                    return;
+                }
+                
+                videoName = data.video_name;
+                firstFrame = data.first_frame;
+                shapes = data.shapes || [];
+                points = [];
+                
+                drawCanvas();
+                updateShapesList();
+                showAlert(`Loaded: ${data.video_name} (${data.total_frames} frames)`, 'success');
+            } catch (err) {
+                showAlert('Error loading video: ' + err.message, 'error');
+            }
+        }
+        
+        async function listVideos() {
+            try {
+                const res = await fetch(`${API_BASE}/list_videos`);
+                const data = await res.json();
+                
+                if (data.videos && data.videos.length > 0) {
+                    const container = document.getElementById('videoListContainer');
+                    const list = document.getElementById('videoList');
+                    
+                    list.innerHTML = data.videos.map(video => 
+                        `<div style="padding: 0.5rem; cursor: pointer; border-radius: 4px; margin-bottom: 0.25rem;" 
+                              onmouseover="this.style.background='rgba(255,255,255,0.1)'" 
+                              onmouseout="this.style.background='transparent'"
+                              onclick="selectVideo('${video.replace(/'/g, "\\'")}')">
+                            ${video}
+                        </div>`
+                    ).join('');
+                    
+                    container.style.display = 'block';
+                    showAlert(`Found ${data.videos.length} videos`, 'success');
+                } else {
+                    showAlert('No videos found in Dataset folder', 'error');
+                }
+            } catch (err) {
+                showAlert('Error listing videos: ' + err.message, 'error');
+            }
+        }
+        
+        function selectVideo(path) {
+            document.getElementById('videoPath').value = path;
+            document.getElementById('videoListContainer').style.display = 'none';
+        }
+        
+        function clearPoints() {
+            points = [];
+            drawCanvas();
+        }
+        
+        function undoPoint() {
+            points.pop();
+            drawCanvas();
+        }
+        
+        async function saveShape() {
+            const shapeName = document.getElementById('shapeName').value;
+            
+            if (!shapeName) {
+                showAlert('Please enter a shape name', 'error');
+                return;
+            }
+            
+            if (points.length < 3) {
+                showAlert('Need at least 3 points to save a shape', 'error');
+                return;
+            }
+            
+            try {
+                const res = await fetch(`${API_BASE}/save_shape`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shape_name: shapeName, points })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    showAlert(data.error, 'error');
+                    return;
+                }
+                
+                shapes = data.shapes || [];
+                points = [];
+                document.getElementById('shapeName').value = '';
+                
+                drawCanvas();
+                updateShapesList();
+                showAlert(`Shape "${shapeName}" saved!`, 'success');
+            } catch (err) {
+                showAlert('Error saving shape: ' + err.message, 'error');
+            }
+        }
+        
+        async function deleteShape(name) {
+            if (!confirm(`Delete shape "${name}"?`)) return;
+            
+            try {
+                const res = await fetch(`${API_BASE}/delete_shape`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ shape_name: name })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    showAlert(data.error, 'error');
+                    return;
+                }
+                
+                shapes = data.shapes || [];
+                selectedShapes.delete(name);
+                updateShapesList();
+                showAlert(`Shape "${name}" deleted`, 'success');
+            } catch (err) {
+                showAlert('Error deleting shape: ' + err.message, 'error');
+            }
+        }
+        
+        function toggleShape(name) {
+            if (selectedShapes.has(name)) {
+                selectedShapes.delete(name);
+            } else {
+                selectedShapes.add(name);
+            }
+        }
+        
+        function updateShapesList() {
+            const list = document.getElementById('shapesList');
+            
+            if (shapes.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #6b7280; padding: 1rem;">No shapes saved yet</p>';
+                return;
+            }
+            
+            list.innerHTML = shapes.map(name => `
+                <div class="shape-item">
+                    <label>
+                        <input type="checkbox" ${selectedShapes.has(name) ? 'checked' : ''} 
+                               onchange="toggleShape('${name}')">
+                        <span>${name}</span>
+                    </label>
+                    <button class="danger" style="padding: 0.25rem 0.75rem; font-size: 0.85rem;" 
+                            onclick="deleteShape('${name}')">Delete</button>
+                </div>
+            `).join('');
+        }
+        
+        async function initializeTrackers() {
+            if (selectedShapes.size === 0) {
+                showAlert('Please select at least one shape to track', 'error');
+                return;
+            }
+            
+            const trackerType = document.getElementById('trackerType').value;
+            
+            try {
+                const res = await fetch(`${API_BASE}/initialize_trackers`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        shapes: Array.from(selectedShapes),
+                        tracker_type: trackerType
+                    })
+                });
+                
+                const data = await res.json();
+                
+                if (data.error) {
+                    showAlert(data.error, 'error');
+                    return;
+                }
+                
+                showAlert(`Initialized ${data.tracker_count} trackers`, 'success');
+            } catch (err) {
+                showAlert('Error initializing trackers: ' + err.message, 'error');
+            }
+        }
+        
+        async function playVideo() {
+            try {
+                await fetch(`${API_BASE}/play`, { method: 'POST' });
+                document.getElementById('videoStream').src = 'http://localhost:5000/video_feed?' + new Date().getTime();
+                showAlert('Playback started', 'success');
+            } catch (err) {
+                showAlert('Error starting playback: ' + err.message, 'error');
+            }
+        }
+        
+        async function pauseVideo() {
+            try {
+                await fetch(`${API_BASE}/pause`, { method: 'POST' });
+                showAlert('Playback paused', 'info');
+            } catch (err) {
+                showAlert('Error pausing: ' + err.message, 'error');
+            }
+        }
+        
+        async function resetVideo() {
+            try {
+                await fetch(`${API_BASE}/reset`, { method: 'POST' });
+                showAlert('Video reset to beginning', 'info');
+            } catch (err) {
+                showAlert('Error resetting: ' + err.message, 'error');
+            }
+        }
+        
+        async function updateStatus() {
+            try {
+                const res = await fetch(`${API_BASE}/status`);
+                const data = await res.json();
+                
+                document.getElementById('statusVideoLoaded').textContent = data.video_loaded ? 'Yes' : 'No';
+                document.getElementById('statusVideoName').textContent = videoName || '-';
+                document.getElementById('statusFrame').textContent = `${data.frame_count} / ${data.total_frames}`;
+                document.getElementById('statusTrackers').textContent = data.tracker_count;
+                document.getElementById('statusPlaying').textContent = data.is_playing ? 'Playing' : 'Stopped';
+            } catch (err) {
+                // Silent fail
+            }
+        }
+        
+        function showAlert(message, type = 'info') {
+            const container = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert ${type}`;
+            alert.textContent = message;
+            container.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
