@@ -328,6 +328,7 @@ if __name__ == "__main__":
     print("2. Load EXISTING shape")
     print("3. List all saved shapes")
     print("4. List shapes for this video")
+
     
     choice = input("\nEnter choice (1/2/3/4): ").strip()
     
@@ -354,5 +355,22 @@ if __name__ == "__main__":
         manager.list_shapes()
     
     elif choice == "4":
-        manager = SavedShapes()
-        manager.list_shapes(video_name)
+            manager = SavedShapes()
+            shapes_list = manager.list_shapes(video_name)
+            
+            if not shapes_list:
+                print("No shapes available to delete.")
+            else:
+                print("\nDo you want to delete a shape? (y/n): ", end="")
+                delete_choice = input().strip().lower()
+                
+                if delete_choice == "y":
+                    shape_to_delete = input("Enter the name of the shape to delete: ").strip()
+                    if shape_to_delete:
+                        manager.delete_shape(video_name, shape_to_delete)
+                    else:
+                        print("No shape name provided. Deletion cancelled.")
+                else:
+                    print("Deletion cancelled.")
+    else:
+            print("Invalid choice. Exiting...")
